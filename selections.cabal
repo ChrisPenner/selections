@@ -1,8 +1,8 @@
-name:                selectable
+name:                selections
 version:             0.1.0.0
 -- synopsis:
 -- description:
-homepage:            https://github.com/ChrisPenner/selectable#readme
+homepage:            https://github.com/ChrisPenner/selections#readme
 license:             BSD3
 license-file:        LICENSE
 author:              Chris Penner
@@ -15,10 +15,11 @@ cabal-version:       >=1.10
 
 library
   hs-source-dirs:      src
-  exposed-modules:     Data.Functor.Selectable
+  exposed-modules:     Data.Functor.Selection
   build-depends:       base >= 4.7 && < 5
                      , comonad
                      , bifunctors
+                     , mtl
   default-language:    Haskell2010
 
 source-repository head

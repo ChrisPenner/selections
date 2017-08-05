@@ -3,17 +3,16 @@
 {-# language GeneralizedNewtypeDeriving #-}
 {-# language UndecidableInstances #-}
 {-# language StandaloneDeriving #-}
-module Data.Functor.Selectable 
+module Data.Functor.Selection
   ( -- * SelectionT
   SelectionT(..)
-  -- * Working with Selections
-  , newSelection
-  , forgetSelection
   -- ** Selecting/Deselecting
   -- | Most selection combinators require that both the selected and unselected types
   -- be equal (i.e. SelectionT f a a); this is necessary since items will switch
   -- their selection status. Your selected and unselected types may diverge, but 
   -- you'll need to unify them in order to extract your underlying functor.
+  , newSelection
+  , forgetSelection
   , select
   , include
   , exclude
@@ -29,13 +28,11 @@ module Data.Functor.Selectable
   , selectWithContext
   ) where
 
-import Control.Arrow ((&&&))
-import Control.Comonad
-import Control.Monad
-import Data.Functor.Compose
-import Data.Bifunctor
-import Data.Bitraversable
-import Data.Bifoldable
+import Control.Comonad (Comonad(..))
+import Control.Monad.Trans
+import Data.Bifoldable (Bifoldable(..))
+import Data.Bifunctor (Bifunctor(..))
+import Data.Bitraversable (Bitraversable(..))
 
 -- | A monad transformer for performing actions over selected
 -- values. Combinators are provided to select specific values within
@@ -51,7 +48,6 @@ newtype SelectionT f b a = SelectionT {
 deriving instance (Eq (f (Either b a))) => Eq (SelectionT f b a)
 deriving instance (Show (f (Either b a))) => Show (SelectionT f b a)
 
--- | Applicative over selected items
 instance (Applicative f) => Applicative (SelectionT f b) where
   pure = SelectionT . pure . pure
   SelectionT fa <*> SelectionT ga = SelectionT ((<*>) <$> fa <*> ga)
@@ -67,11 +63,11 @@ instance (Functor f) => Bifunctor (SelectionT f) where
   first f = SelectionT . fmap (first f) . runSelectionT
   second = fmap
 
--- | Bifoldable over unselected and selected values
+-- | Bifoldable over unselected and selected values respectively
 instance (Foldable f) => Bifoldable (SelectionT f) where
   bifoldMap l r = foldMap (bifoldMap l r) . runSelectionT
 
--- | Bitraversable over unselected and selected values
+-- | Bitraversable over unselected and selected values respectively
 instance (Traversable f) => Bitraversable (SelectionT f) where
   bitraverse l r = fmap SelectionT . traverse (bitraverse l r) . runSelectionT
 
@@ -93,13 +89,13 @@ select f = include f . deselectAll
 
 -- | Add items which match a predicate to the current selection
 -- 
--- @include f . select g = select (\a -> f a || g a)
+-- @include f . select g = select (\a -> f a || g a)@
 include :: Functor f => (a -> Bool) -> SelectionT f a a -> SelectionT f a a
 include f = SelectionT . fmap (either (choose f) Right) . runSelectionT
 
 -- | Remove items which match a predicate to the current selection
 -- 
--- @exclude f . select g = select (\a -> f a && not (g a))
+-- @exclude f . select g = select (\a -> f a && not (g a))@
 exclude :: Functor f => (a -> Bool) -> SelectionT f a a -> SelectionT f a a
 exclude f = SelectionT . fmap (either Left (switch . choose f)) . runSelectionT
 

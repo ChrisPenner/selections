@@ -1,6 +1,6 @@
 name:                selections
-version:             0.1.0.0
--- synopsis:
+version:             0.1.0.1
+synopsis:            Combinators for operating with selections over an underlying functor
 -- description:
 homepage:            https://github.com/ChrisPenner/selections#readme
 license:             BSD3
@@ -24,4 +24,4 @@ library
 
 source-repository head
   type:     git
-  location: https://github.com/ChrisPenner/selectable
+  location: https://github.com/ChrisPenner/selections

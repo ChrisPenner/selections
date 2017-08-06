@@ -1,3 +1,4 @@
+{-# language FlexibleInstances #-}
 {-# language DeriveFunctor #-}
 {-# language DeriveFoldable #-}
 {-# language GeneralizedNewtypeDeriving #-}
@@ -5,6 +6,7 @@
 {-# language StandaloneDeriving #-}
 {-# language MultiParamTypeClasses #-}
 {-# language RankNTypes #-}
+{-# language TypeApplications #-}
 module Data.Functor.Selection
   ( -- * SelectionT
   SelectionT(..)
@@ -26,18 +28,23 @@ module Data.Functor.Selection
   , getSelected
   , getUnselected
 
+  -- * Bifunctor, Bifoldable, Bitraversable
+
   -- * Comonad Combinators
   , selectWithContext
   ) where
 
 import Control.Comonad (Comonad(..))
 import Control.Monad.Trans
+import Data.Functor.Compose
 import Data.Bifoldable (Bifoldable(..))
 import Data.Bifunctor (Bifunctor(..))
 import Data.Bitraversable (Bitraversable(..))
 
 class Selectable s where
+  -- | Lift a functor into the Selectable
   wrapSelection :: f (Either b a) -> s b f a
+  -- | extract a functor from the Selectable
   unwrapSelection :: s b f a -> f (Either b a)
 
 -- | A monad transformer for performing actions over selected
@@ -46,13 +53,9 @@ class Selectable s where
 -- but interprets semantics differently, thus providing a different
 -- understanding and different combinators.
 newtype SelectionT b f a = SelectionT {
-  -- | Expose the underlying representation of a selection, this is
-  -- isomorphic to EitherT.
+  -- | Expose the underlying representation of a selection
   runSelectionT :: f (Either b a)
   } deriving (Functor, Foldable)
-
-deriving instance (Eq (f (Either b a))) => Eq (SelectionT b f a)
-deriving instance (Show (f (Either b a))) => Show (SelectionT b f a)
 
 instance (Applicative f) => Applicative (SelectionT b f) where
   pure = SelectionT . pure . pure
@@ -67,18 +70,14 @@ instance (Monad f) => Monad (SelectionT b f) where
 instance (Selectable s) => MonadTrans (s b) where
   lift = newSelection
 
--- -- | Bifunctor over unselected ('first') and selected ('second') values
--- instance (Functor f) => Bifunctor (SelectionT f) where
---   first f = SelectionT . fmap (first f) . runSelectionT
---   second = fmap
+bimapSel :: (Selectable s, Functor f) => (b -> d) -> (a -> c) -> s b f a -> s d f c
+bimapSel l r = wrapSelection . fmap (bimap l r) . unwrapSelection
 
--- -- | Bifoldable over unselected and selected values respectively
--- instance (Foldable f) => Bifoldable (SelectionT f) where
---   bifoldMap l r = foldMap (bifoldMap l r) . runSelectionT
+bifoldMapSel :: (Monoid m, Selectable s, Foldable f) => (b -> m) -> (a -> m) -> s b f a -> m
+bifoldMapSel l r = foldMap (bifoldMap l r) . unwrapSelection
 
--- -- | Bitraversable over unselected and selected values respectively
--- instance (Traversable f) => Bitraversable (SelectionT f) where
---   bitraverse l r = fmap SelectionT . traverse (bitraverse l r) . runSelectionT
+bitraverseSel :: (Selectable s, Traversable f, Applicative f) => (b -> f d) -> (a -> f c) -> s b f a -> f (s d f c)
+bitraverseSel  l r = fmap wrapSelection . traverse (bitraverse l r) . unwrapSelection
 
 instance Selectable SelectionT where
   wrapSelection = SelectionT
@@ -136,7 +135,7 @@ onSelected f = wrapSelection . fmap (second f) . unwrapSelection
 
 -- | Map over unselected values
 --
--- @onSelected = first@
+-- @onSelected = wrapSelection . fmap (first f) . unwrapSelection@
 onUnselected :: (Selectable s, Functor f) => (b -> c) -> s b f a -> s c f a
 onUnselected f = wrapSelection . fmap (first f) . unwrapSelection
 
@@ -153,6 +152,12 @@ getSelected = foldMap (bifoldMap (const []) pure) . unwrapSelection
 -- @getUnselected = getSelected . invertSelection@
 getUnselected :: (Selectable s, Functor f, Foldable f) => s b f a -> [b]
 getUnselected = getSelected . invertSelection
+
+-- | Unify selected and unselected and forget the selection
+--
+-- @unify f g == forgetSelection . onUnselected f . onSelected g@
+unify :: (Selectable s, Functor f) => (b -> c) -> (a -> c) -> s b f a -> f c
+unify l r = fmap (either l r) . unwrapSelection
 
 -- | Perform a natural transformation over the underlying container of a selectable
 trans :: (Selectable s) => (forall c. f c -> g c) -> s b f a -> s b g a
@@ -177,3 +182,8 @@ choose = choose' id
 switch :: Either a b -> Either b a
 switch = either Right Left
 
+(&) :: a -> (a -> c) -> c
+(&) = flip ($)
+
+-- x :: [String]
+-- x = newSelection @SelectionT [1..5] & fmap (+10) & select (>12) & unify show show

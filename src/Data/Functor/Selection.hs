@@ -21,8 +21,8 @@ module Data.Functor.Selection
   , selectAll
   , deselectAll
   , invertSelection
-  , onSelected
-  , onUnselected
+  , mapSelected
+  , mapUnselected
   , getSelected
   , getUnselected
   , unify
@@ -32,6 +32,7 @@ module Data.Functor.Selection
   , selectWithContext
   ) where
 
+import Control.Monad (ap)
 import Control.Comonad (Comonad(..))
 import Data.Bifoldable (Bifoldable(..))
 import Data.Bifunctor (Bifunctor(..))
@@ -58,12 +59,12 @@ newtype Selection f b a = Selection {
 deriving instance (Show (f (Either b a))) => Show (Selection f b a)
 deriving instance (Eq (f (Either b a))) => Eq (Selection f b a)
 
-instance (Applicative f) => Applicative (Selection f b) where
-  pure = Selection . pure . pure
-  Selection fa <*> Selection ga = Selection ((<*>) <$> fa <*> ga)
+instance Monad m => Applicative (Selection m b) where
+  pure = Selection . pure . Right
+  (<*>) = ap
 
 -- | Selection is a monad over selected items when the underlying m is a Monad
-instance (Monad f) => Monad (Selection f b) where
+instance (Monad m) => Monad (Selection m b) where
   return = pure
   Selection m >>= k =
     Selection $ m >>= either (return . Left) (runSelection . k)
@@ -135,14 +136,14 @@ invertSelection = modifySelection (fmap switch)
 -- | Map over selected values
 --
 -- @'onSelected' = fmap@
-onSelected :: (Selectable s f) => (a -> c) -> s b a -> s b c
-onSelected f = modifySelection (fmap (second f))
+mapSelected :: (Selectable s f) => (a -> c) -> s b a -> s b c
+mapSelected f = modifySelection (fmap (second f))
 
 -- | Map over unselected values
 --
 -- @'onSelected' f = 'modifySelection' (fmap ('first' f))@
-onUnselected :: (Selectable s f) => (b -> c) -> s b a -> s c a
-onUnselected f = modifySelection (fmap (first f))
+mapUnselected :: (Selectable s f) => (b -> c) -> s b a -> s c a
+mapUnselected f = modifySelection (fmap (first f))
 
 -- | Collect all selected values into a list. For more complex operations use
 -- foldMap.

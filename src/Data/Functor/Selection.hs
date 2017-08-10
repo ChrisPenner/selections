@@ -1,6 +1,7 @@
 {-# language FlexibleInstances #-}
 {-# language DeriveFunctor #-}
 {-# language DeriveFoldable #-}
+{-# language DeriveTraversable #-}
 {-# language UndecidableInstances #-}
 {-# language RankNTypes #-}
 {-# language FunctionalDependencies #-}
@@ -8,6 +9,7 @@
 module Data.Functor.Selection
   ( -- * Selection
   Selection(..)
+  , Selectable(..)
   -- ** Selecting/Deselecting
   -- | Most selection combinators require that both the selected and unselected types
   -- be equal (i.e. Selection f a a); this is necessary since items will switch
@@ -51,10 +53,10 @@ class Functor f => Selectable s f | s -> f where
   unwrapSelection :: s b a -> f (Either b a)
 
 -- | The simplest selection type
-newtype Selection f b a = Selection {
-  -- | Expose the underlying representation of a Selection
-  runSelection :: f (Either b a)
-  } deriving (Functor, Foldable)
+newtype Selection f b a = Selection 
+  { -- | Expose the underlying representation of a Selection
+    runSelection :: f (Either b a)
+  } deriving (Functor, Foldable, Traversable)
 
 deriving instance (Show (f (Either b a))) => Show (Selection f b a)
 deriving instance (Eq (f (Either b a))) => Eq (Selection f b a)

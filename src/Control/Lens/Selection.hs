@@ -5,7 +5,6 @@ module Control.Lens.Selection
   , unselected
   , inverting
   , unwrapping
-  , selecting
   ) where
 
 import Data.Profunctor (Profunctor(..))
@@ -40,13 +39,3 @@ inverting = dimap invertSelection (fmap invertSelection)
 -- @'unwrapping' = iso 'unwrapSelection' 'wrapSelection'@
 unwrapping :: (Functor f, Selectable s f, Selectable t g) => Iso (s b a) (t d c) (f (Either b a)) (g (Either d c))
 unwrapping = dimap unwrapSelection (fmap wrapSelection)
-
--- | Traversal which performs a selection on a functor, traverses elements which
--- match, then forgets the selection. This is similar to 'filtered' from Lens
--- but is a valid Traversal, it's okay to break the filtering predicate during
--- the traversal.
-selecting :: forall t a b. (Traversable t) => (a -> Bool) -> Traversal' (t a) a
-selecting p f fa = forgetSelection <$> traverse f embedded
-  where
-    embedded :: Selection t a a
-    embedded = select p $ newSelection fa

@@ -4,6 +4,9 @@ Selections
 
 [See it on Hackage](https://hackage.haskell.org/package/selections)
 
+You'll probably want to start by reading the
+[tutorial](https://github.com/ChrisPenner/selections/tree/master/tutorials/Basic.md).
+
 `selections` is a haskell package for transforming subsets of values within a functor using
 an intuitive selection-based interface.
 

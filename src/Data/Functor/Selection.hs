@@ -134,7 +134,7 @@ mapSelected = fmap
 
 -- | Map over unselected values
 --
--- @'mapUnselected' = 'first'
+-- @'mapUnselected' = 'first'@
 mapUnselected :: (Functor f) => (b -> c) -> Selection f b a -> Selection f c a
 mapUnselected = first
 

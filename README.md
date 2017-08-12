@@ -32,7 +32,11 @@ Here's how it looks, tutorials are available
 
 ```haskell
 xs = [1..6]
-λ> newSelection xs & select even & mapSelected (+100) & bimap (("Odd: " ++) . show) (("Even: " ++) . show) & forgetSelection
+λ> newSelection xs  -- wrap `[Int]` into `Selection [] Int Int`, you can wrap any functor
+     & select even  -- Focus on only even integers
+     & mapSelected (+100)  -- Increment selected ints by 100
+     & bimap (("Odd: " ++) . show) (("Even: " ++) . show)  -- map over unselected and selected values respectively
+     & forgetSelection -- Collapse back down to the underlying functor, in this case a list
 ["Odd: 1","Even: 102","Odd: 3","Even: 104","Odd: 5","Even: 106"]
 ```
 

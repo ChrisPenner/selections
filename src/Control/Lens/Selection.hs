@@ -18,24 +18,24 @@ type Iso' s a = Iso s s a a
 -- | Traversal over selected elements
 --
 -- @'selected' = 'traverse'@
-selected :: (Selectable s t, Traversable (s b)) => Traversal (s b a) (s b c) a c
+selected :: (Traversable f) => Traversal (Selection f b a) (Selection f b c) a c
 selected = traverse
 
 -- | Traversal over unselected elements
 --
 -- @'unselected' = 'inverting' . 'selected'@
-unselected :: (Selectable s g, Traversable (s a)) => Traversal (s b a) (s c a) b c
+unselected :: (Traversable f) => Traversal (Selection f b a) (Selection f c a) b c
 unselected = inverting . selected
 
 
 -- | Iso which inverts the current selection
 --
 -- @'inverting' = iso 'invertSelection' 'invertSelection'@
-inverting :: (Selectable s f, Selectable t g) => Iso (s b a) (t d c) (s a b) (t c d)
+inverting :: (Functor f, Functor g) => Iso (Selection f b a) (Selection g d c) (Selection f a b) (Selection g c d)
 inverting = dimap invertSelection (fmap invertSelection)
 
 -- | Iso which exposes the underlying functor representation
 --
 -- @'unwrapping' = iso 'unwrapSelection' 'wrapSelection'@
-unwrapping :: (Functor f, Selectable s f, Selectable t g) => Iso (s b a) (t d c) (f (Either b a)) (g (Either d c))
-unwrapping = dimap unwrapSelection (fmap wrapSelection)
+unwrapping :: (Functor f) => Iso (Selection f b a) (Selection g d c) (f (Either b a)) (g (Either d c))
+unwrapping = dimap runSelection (fmap Selection)

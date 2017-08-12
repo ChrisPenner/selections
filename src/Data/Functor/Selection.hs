@@ -4,12 +4,10 @@
 {-# language DeriveTraversable #-}
 {-# language UndecidableInstances #-}
 {-# language RankNTypes #-}
-{-# language FunctionalDependencies #-}
 {-# language StandaloneDeriving #-}
 module Data.Functor.Selection
   ( -- * Selection
   Selection(..)
-  , Selectable(..)
   -- ** Selecting/Deselecting
   -- | Most selection combinators require that both the selected and unselected types
   -- be equal (i.e. Selection f a a); this is necessary since items will switch
@@ -40,20 +38,8 @@ import Data.Bifoldable (Bifoldable(..))
 import Data.Bifunctor (Bifunctor(..))
 import Data.Bitraversable (Bitraversable(..))
 
--- | You can make any type selectable if it contains a functor of (Either b a)
-class Functor f => Selectable s f | s -> f where
-  -- Modify the underlying representation of a selection
-  modifySelection :: (f (Either b a) -> f (Either d c)) -> s b a -> s d c
-  modifySelection f = wrapSelection . f . unwrapSelection
-
-  -- | Lift a functor into the Selectable
-  wrapSelection :: f (Either b a) -> s b a
-
-  -- | Extract the underlying functor from the Selectable
-  unwrapSelection :: s b a -> f (Either b a)
-
--- | The simplest selection type
-newtype Selection f b a = Selection 
+-- | Make a selection
+newtype Selection f b a = Selection
   { -- | Expose the underlying representation of a Selection
     runSelection :: f (Either b a)
   } deriving (Functor, Foldable, Traversable)
@@ -84,98 +70,97 @@ instance (Foldable f) => Bifoldable (Selection f) where
 instance (Traversable f) => Bitraversable (Selection f) where
   bitraverse l r = fmap Selection . traverse (bitraverse l r) . runSelection
 
-instance (Functor f) => Selectable (Selection f) f where
-  -- modifySelection f (Selection s) = Selection $ f s
-  wrapSelection = Selection
-  unwrapSelection = runSelection
+-- Modify the underlying representation of a selection
+modifySelection :: (Functor f) => (f (Either b a) -> f (Either d c)) -> Selection f b a -> Selection f d c
+modifySelection f = Selection . f . runSelection
 
 -- | Create a selection from a functor by selecting all values
-newSelection :: (Selectable s f) => f a -> s b a
-newSelection = wrapSelection . fmap Right
+newSelection :: (Functor f) => f a -> Selection f b a
+newSelection = Selection . fmap Right
 
 -- | Drops selection from your functor returning all values (selected or not).
 --
 -- @'forgetSelection' . 'newSelection' = id@
 --
 -- @'forgetSelection' = 'unify' id id@
-forgetSelection :: (Selectable s f) => s a a -> f a
+forgetSelection :: (Functor f) => Selection f a a -> f a
 forgetSelection = unify id id
 
 -- | Clear the selection then select only items which match a predicate.
 --
 -- @'select' f = 'include' f . 'deselectAll'@
-select :: (Selectable s f) => (a -> Bool) -> s a a -> s a a
+select :: (Functor f) => (a -> Bool) -> Selection f a a -> Selection f a a
 select f = include f . deselectAll
 
 -- | Add items which match a predicate to the current selection
 --
 -- @'include' f . 'select' g = 'select' (\a -> f a || g a)@
-include :: (Selectable s f) => (a -> Bool) -> s a a -> s a a
+include :: (Functor f) => (a -> Bool) -> Selection f a a -> Selection f a a
 include f = modifySelection (fmap (either (choose f) Right))
 
 -- | Remove items which match a predicate to the current selection
 --
 -- @'exclude' f . 'select' g = 'select' (\a -> f a && not (g a))@
-exclude :: (Selectable s f) => (a -> Bool) -> s a a -> s a a
+exclude :: (Functor f) => (a -> Bool) -> Selection f a a -> Selection f a a
 exclude f = modifySelection (fmap (either Left (switch . choose f)))
 
 -- | Select all items in the container
 --
 -- @'selectAll' = 'include' (const True)@
-selectAll :: (Selectable s f) => s a a -> s a a
+selectAll :: (Functor f) => Selection f a a -> Selection f a a
 selectAll = include (const True)
 
 -- | Deselect all items in the container
 --
 -- @'deselectAll' = 'exclude' (const True)@
-deselectAll :: (Selectable s f) => s a a -> s a a
+deselectAll :: (Functor f) => Selection f a a -> Selection f a a
 deselectAll = exclude (const True)
 
 -- | Flip the selection, all selected are now unselected and vice versa.
-invertSelection :: (Selectable s f) => s b a -> s a b
+invertSelection :: (Functor f) => Selection f b a -> Selection f a b
 invertSelection = modifySelection (fmap switch)
 
 -- | Map over selected values
 --
 -- @'onSelected' = fmap@
-mapSelected :: (Selectable s f) => (a -> c) -> s b a -> s b c
+mapSelected :: (Functor f) => (a -> c) -> Selection f b a -> Selection f b c
 mapSelected f = modifySelection (fmap (second f))
 
 -- | Map over unselected values
 --
 -- @'onSelected' f = 'modifySelection' (fmap ('first' f))@
-mapUnselected :: (Selectable s f) => (b -> c) -> s b a -> s c a
+mapUnselected :: (Functor f) => (b -> c) -> Selection f b a -> Selection f c a
 mapUnselected f = modifySelection (fmap (first f))
 
 -- | Collect all selected values into a list. For more complex operations use
 -- foldMap.
 --
 -- @'getSelected' = foldMap (:[])@
-getSelected :: (Selectable s f, Foldable f) => s b a -> [a]
-getSelected = foldMap (bifoldMap (const []) pure) . unwrapSelection
+getSelected :: (Foldable f) => Selection f b a -> [a]
+getSelected = foldMap (bifoldMap (const []) pure) . runSelection
 
 -- | Collect all unselected values into a list. For more complex operations use
 -- operations from Bifoldable.
 --
 -- @'getUnselected' = 'getSelected' . 'invertSelection'@
-getUnselected :: (Selectable s f, Foldable f) => s b a -> [b]
+getUnselected :: (Foldable f, Functor f) => Selection f b a -> [b]
 getUnselected = getSelected . invertSelection
 
 -- | Unify selected and unselected and forget the selection
 --
 -- @'unify' f g == 'forgetSelection' . 'onUnselected' f . 'onSelected' g@
-unify :: (Selectable s f) => (b -> c) -> (a -> c) -> s b a -> f c
-unify l r = fmap (either l r) . unwrapSelection
+unify :: (Functor f) => (b -> c) -> (a -> c) -> Selection f b a -> f c
+unify l r = fmap (either l r) . runSelection
 
 -- | Perform a natural transformation over the underlying container of a selectable
-trans :: (Selectable s f, Selectable t g) => (forall c. f c -> g c) -> s b a -> t b a
-trans f = wrapSelection . f . unwrapSelection
+trans :: (forall c. f c -> g c) -> Selection f b a -> Selection g b a
+trans f = Selection . f . runSelection
 
 -- Comonad combinators
 
 -- | Select values based on their context within a comonad. This combinator makes
 -- its selection by running the predicate using extend.
-selectWithContext :: (Selectable s w, Comonad w) => (w a -> Bool) -> s a a -> s a a
+selectWithContext :: (Comonad w) => (w a -> Bool) -> Selection w a a -> Selection w a a
 selectWithContext f = modifySelection (extend (choose' extract f) .  fmap (either id id))
 
 

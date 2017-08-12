@@ -8,8 +8,8 @@
 module Data.Functor.Selection
   ( -- * Selection
   Selection(..)
-  , modifySelection
   , Selection'
+  , modifySelection
   -- ** Selecting/Deselecting
   -- | Most selection combinators require that both the selected and unselected types
   -- be equal (i.e. Selection f a a); this is necessary since items will switch
@@ -75,7 +75,7 @@ instance (Foldable f) => Bifoldable (Selection f) where
 instance (Traversable f) => Bitraversable (Selection f) where
   bitraverse l r = fmap Selection . traverse (bitraverse l r) . unwrapSelection
 
--- Modify the underlying representation of a selection
+-- | Modify the underlying representation of a selection
 modifySelection :: (Functor f) => (f (Either b a) -> g (Either d c)) -> Selection f b a -> Selection g d c
 modifySelection f = Selection . f . unwrapSelection
 

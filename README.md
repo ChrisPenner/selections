@@ -25,99 +25,35 @@ you to:
 -   Perform monad computations over selected values if your functor is a Monad
 -   Extract all unselected or selected elements to a list
 -   Deselect and return to your original functor using `unify`
+-   Traverse or fold over selections using `Control.Lens`
 
-Lenses and traversals coming eventually!
+Here's how it looks, more practical examples are available [here](./src/Examples).
+
+```haskell
+xs = [1..6]
+λ> newSelection xs & select even & mapSelected (+100) & bimap (("Odd: " ++) . show) (("Even: " ++) . show) & forgetSelection
+["Odd: 1","Even: 102","Odd: 3","Even: 104","Odd: 5","Even: 106"]
+```
 
 Technically you could use `Selection` as a monad-transformer, but it's a bit
 clunky and you'd probably be better off with
 [`EitherT`](https://hackage.haskell.org/package/either-4.4.1.1/docs/Control-Monad-Trans-Either.html).
+
 Fun fact, `Selection` is isomorphic to `EitherT`, but the semantics are quite
 different and they're suited to different purposes.
 
+## When Should/Shouldn't I Use Selections?
+
+You can use selections whenever you've got a bunch of things and you want to operate over just a few of them at a time.
+You can do everything that selections provides by combining a bunch of predicates with fmap, but it gets messy really
+quick; selections provides a clean interface for this sort of operation.
+
+You shouldn't use selections when you're looking for a monadic interface for this sort of thing, selections works
+at the value level and typically you want to chain selection commands using `(.)` or `(&)`, it technically can
+be used as a monad transformer if your underlying functor is also a monad, but at that point you may wish to check
+out [`EitherT`](https://hackage.haskell.org/package/either-4.4.1.1/docs/Control-Monad-Trans-Either.html) instead.
+
 ## Examples
 
-We'll start off using a simple list as our underlying functor.
-
-You may find it useful to throw in some [Type
-Applications](https://ghc.haskell.org/trac/ghc/wiki/TypeApplication) to help
-disambiguate type for the compiler. This typically isn't an issue in compiled code,
-but the interpreter can get confused from time to time.
-
-```haskell
-{-# language TypeApplications #-}
-import Data.Functor.Selection
-
--- This combinator is super handy for chaining selections along
-(&) :: a -> (a -> c) -> c
-(&) = flip ($)
-
-xs :: [Int]
-xs = [1..6]
-```
-
-Let's select just the even numbers and see what we get!
-
-```haskell
-evens :: Selection [] Int Int
-evens = newSelection xs & select even
--- Selection {runSelection = [Left 1,Right 2,Left 3,Right 4,Left 5,Right 6]}
-```
-
-Cool, we can see that the underlying representation consists of our original
-functor, except it uses Either to show which elements are selected. Let's 
-multiply our odd elements by two with `mapUnselected`
-
-```haskell
-byTwo :: Selection [] Int Int
-byTwo = evens & mapUnselected (*2)
--- Selection {runSelection = [Left 2,Right 2,Left 6,Right 4,Left 10,Right 6]}
-```
-
-Notice that even though the numbers became even as a result of the transformation
-the same elements remain selected. If you wanted to you could run 'select even'
-again to include the new elements.
-
-Let's exclude anything greater than 5 from our selection, then get the numbers
-that remain selected as a list
-
-```haskell
-excluded :: [Int]
-excluded = byTwo & exclude (>5) & getSelected
--- [2, 4]
-```
-Nice! Looks like it worked! Notice how the order of elements remained 
-the same through the whole thing!
-
-The types of the selected and unselected elements are allowed to diverge!
-So long as they line up when we decide to get the results then it's all good!
-We can use `unify :: Selectable s f => (b -> c) -> (a -> c) -> s b a -> f c` to
-help us out with that.
-
-Let's try it out!
-
-```haskell
-diverged :: Selection [] String Int
-diverged = newSelection @(Selection []) [1..6] & select even & mapUnselected show
--- Selection {runSelection = [Left "1",Right 2,Left "3",Right 4,Left "5",Right 6]}
- 
-unified :: [Int]
-unified = diverged & mapUnselected ("100"++) & unify read id
-[1001,2,1003,4,1005,6]
-```
-
-`[]` is a great functor to try out because it has Applicative and Monad instances
-defined, which both act pretty much as you'd expect, but they only consider selected
-values!
-
-```haskell
-evens :: Selection [] Int Int
-evens = newSelection [1..6] & select even 
-
-plus10 :: Selection [] Int Int
-plus10 = do
-  x <- evens
-  newSelection [x + 10, x + 100]
--- Selection {runSelection = [Left 1,Right 12,Right 102,Left 3,Right 14,Right 104,Left 5,Right 16,Right 106]}
-```
-
-
+Check out the [Accounts tutorial](./src/Examples/Accounts.lhs) first to get your bearings, it's a literate haskell file
+so you can load it up in ghci if you like! After that continue to the [Lens tutorial](./src/Examples/Accounts.lhs).

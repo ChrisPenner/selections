@@ -1,7 +1,7 @@
 name:                selections
-version:             0.1.0.2
+version:             0.1.0.3
 synopsis:            Combinators for operating with selections over an underlying functor
--- description:
+description:         See the [README on github](https://github.com/ChrisPenner/selections#readme) for tutorials!
 homepage:            https://github.com/ChrisPenner/selections#readme
 license:             BSD3
 license-file:        LICENSE

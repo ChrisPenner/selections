@@ -9,6 +9,7 @@ module Data.Functor.Selection
   ( -- * Selection
   Selection(..)
   , modifySelection
+  , Selection'
   -- ** Selecting/Deselecting
   -- | Most selection combinators require that both the selected and unselected types
   -- be equal (i.e. Selection f a a); this is necessary since items will switch
@@ -44,6 +45,9 @@ newtype Selection f b a = Selection
   { -- | Expose the underlying representation of a 'Selection'
     unwrapSelection :: f (Either b a)
   } deriving (Functor, Foldable, Traversable)
+
+-- | A type alias for selections with the same unselected/selected types
+type Selection' f a = Selection f a a
 
 deriving instance (Show (f (Either b a))) => Show (Selection f b a)
 deriving instance (Eq (f (Either b a))) => Eq (Selection f b a)

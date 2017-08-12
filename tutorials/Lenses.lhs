@@ -1,3 +1,5 @@
+Let's set up our environment:
+
 > {-# language TemplateHaskell #-}
 > module Examples.Lens where
 
@@ -31,7 +33,7 @@ Following from the previous tutorial we can select american users:
 > americans :: Selection' [] Account
 > americans = newSelection accounts & select ((==USA) . view country)
 
-Now we can use our traversals from `Control.Lens.Selection`! Let's get a list of the 
+Now we can use our traversals from `Control.Lens.Selection`! Let's get a list of the
 selected accounts:
 
 ```
@@ -40,7 +42,7 @@ selected accounts:
 , Account {_name = "Blake", _country = USA, _balance = -6.0}]
 ```
 
-`selected` is a traversal, so that means we can compose it with other lenses and 
+`selected` is a traversal, so that means we can compose it with other lenses and
 perform operations!
 
 ```

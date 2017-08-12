@@ -27,7 +27,8 @@ you to:
 -   Deselect and return to your original functor using `unify`
 -   Traverse or fold over selections using `Control.Lens`
 
-Here's how it looks, more practical examples are available [here](./src/Examples).
+Here's how it looks, tutorials are available
+[here](https://github.com/ChrisPenner/selections/tree/master/tutorials).
 
 ```haskell
 xs = [1..6]
@@ -55,5 +56,7 @@ out [`EitherT`](https://hackage.haskell.org/package/either-4.4.1.1/docs/Control-
 
 ## Examples
 
-Check out the [Accounts tutorial](./src/Examples/Accounts.lhs) first to get your bearings, it's a literate haskell file
-so you can load it up in ghci if you like! After that continue to the [Lens tutorial](./src/Examples/Accounts.lhs).
+Check out the [Accounts
+tutorial](https://github.com/ChrisPenner/selections/tree/master/tutorials/Basic.md)
+first to get your bearings. After that continue to the [Lenses
+tutorial](https://github.com/ChrisPenner/selections/tree/master/tutorials/Lenses.md).

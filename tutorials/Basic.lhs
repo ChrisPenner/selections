@@ -1,3 +1,5 @@
+We'll need a few imports to start off:
+
 > module Examples.Accounts where
 
 > import Data.Functor.Selection

@@ -38,4 +38,4 @@ inverting = dimap invertSelection (fmap invertSelection)
 --
 -- @'unwrapping' = iso 'unwrapSelection' 'wrapSelection'@
 unwrapping :: (Functor f) => Iso (Selection f b a) (Selection g d c) (f (Either b a)) (g (Either d c))
-unwrapping = dimap runSelection (fmap Selection)
+unwrapping = dimap unwrapSelection (fmap Selection)

@@ -4,6 +4,8 @@ Selections
 
 [See it on Hackage](https://hackage.haskell.org/package/selections)
 
+See also this library's [Scala port](https://github.com/ChristopherDavenport/selection) by **Christopher Davenport**
+
 You'll probably want to start by reading the
 [tutorial](https://github.com/ChrisPenner/selections/tree/master/tutorials/Basic.md).
 

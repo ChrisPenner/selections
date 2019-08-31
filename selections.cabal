@@ -1,13 +1,13 @@
 cabal-version: 1.12
 
--- This file has been generated from package.yaml by hpack version 0.31.1.
+-- This file has been generated from package.yaml by hpack version 0.31.2.
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 0d652c56e58eb3b75cc7338d986f83bddc9c24b8a15c26408bdb4e4a995addaf
+-- hash: d389afaa35ed9f197bfbdca9aa8728687490a7269f2a6b989659e436a04ed90d
 
 name:           selections
-version:        0.2.0.0
+version:        0.3.0.0
 synopsis:       Combinators for operating with selections over an underlying functor
 description:    See the [README on github](https://github.com/ChrisPenner/selections#readme) for tutorials!
 category:       Data Structures, Functors
@@ -36,7 +36,4 @@ library
       src
   build-depends:
       base >=4.7 && <5
-    , bifunctors
-    , comonad
-    , profunctors
   default-language: Haskell2010

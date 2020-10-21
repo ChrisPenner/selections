@@ -1,5 +1,5 @@
 name: selections
-version: '0.3.0.0'
+version: 0.3.0.0
 synopsis: Combinators for operating with selections over an underlying functor
 description: See the [README on github](https://github.com/ChrisPenner/selections#readme)
   for tutorials!

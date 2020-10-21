@@ -28,7 +28,7 @@ module Data.Functor.Selection
   , getSelected
   , getUnselected
   , unify
-  , trans
+  , hoist
   ) where
 
 import Control.Monad (ap)
@@ -164,8 +164,8 @@ unify :: (Functor f) => (b -> c) -> (a -> c) -> Selection f b a -> f c
 unify l r = fmap (either l r) . unwrapSelection
 
 -- | Perform a natural transformation over the underlying container of a selectable
-trans :: (Functor f) => (forall c. f c -> g c) -> Selection f b a -> Selection g b a
-trans f = withUnwrapped f
+hoist :: (Functor f) => (forall c. f c -> g c) -> Selection f b a -> Selection g b a
+hoist f = withUnwrapped f
 
 -- Comonad combinators
 
